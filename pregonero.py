@@ -10,7 +10,7 @@ import os
 # Config file arguments
 # - token
 # - instance_uri
-# - message (can use two placeholders, instance, users) 
+# - message (can use two placeholders, instance, users, statuses) 
 
 default_message = 'There are {users} souls at {instance}'
 
@@ -52,7 +52,7 @@ mastodon = Mastodon(
 
 # Get data from the server
 instance = mastodon.instance()
-toot = config['message'].format(instance = instance["uri"], users = instance["stats"]["user_count"])
+toot = config['message'].format(instance = instance["uri"], users = instance["stats"]["user_count"], statuses = instance["stats"]["status_count"])
 
 # Finish
 if dryrun:
