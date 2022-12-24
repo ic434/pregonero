@@ -83,7 +83,7 @@ elif users <= 256 and last_power_of_two > status['hit']:
     status['hit'] = last_power_of_two
 else:
     for goal in milestones:
-        if goal > status['hit'] and users > goal:
+        if goal > status['hit'] and users >= goal:
             message = config['wow'] if users == goal else config['wow_plus']
             users = goal
             status['hit'] = goal
