@@ -66,10 +66,10 @@ mastodon = Mastodon(
 )
 
 # Get data from the server
-instance = mastodon.instance()
-users = instance["stats"]["user_count"]
-instance = instance["uri"]
-statuses = instance["stats"]["status_count"]
+instance_data = mastodon.instance()
+users = instance_data["stats"]["user_count"]
+instance = instance_data["uri"]
+statuses = instance_data["stats"]["status_count"]
 today = datetime.datetime.now()
 day_signature = 'message_' + str(today.month) + '_' + str(today.day)
 last_power_of_two = int(math.pow(2, int(math.log(users, 2))))
@@ -78,18 +78,18 @@ message = config['message']
 if day_signature in config:
     message = config[day_signature]
 elif users <= 256 and last_power_of_two > status['hit']:
-    config['message'] = config['developer'] if users == last_power_of_two else config['developer_plus']
+    message = config['developer'] if users == last_power_of_two else config['developer_plus']
     users = last_power_of_two
     status['hit'] = last_power_of_two
 else:
     for goal in milestones:
         if goal > status['hit'] and users > goal:
-            config['message'] = config['wow'] if users == goal else config['wow_plus']
+            message = config['wow'] if users == goal else config['wow_plus']
             users = goal
             status['hit'] = goal
             break
 
-toot = config['message'].format(instance = instance, users = users, statuses = statuses)
+toot = message.format(instance = instance, users = users, statuses = statuses)
 toot = toot + eye
 
 # Finish
