@@ -47,7 +47,7 @@ try:
 except Exception as e:
     print("Config file error: {}".format(e))
 
-status = {'hit': 0}
+status = {'users': 0, 'hit': 0}
 try:
     with open(status_file) as f:
         status.update(yaml.safe_load(f))
@@ -70,6 +70,7 @@ instance_data = mastodon.instance()
 users = instance_data["stats"]["user_count"]
 instance = instance_data["uri"]
 statuses = instance_data["stats"]["status_count"]
+reportedusers = users
 today = datetime.datetime.now()
 day_signature = 'message_' + str(today.month) + '_' + str(today.day)
 last_power_of_two = int(math.pow(2, int(math.log(users, 2))))
@@ -77,17 +78,19 @@ last_power_of_two = int(math.pow(2, int(math.log(users, 2))))
 message = config['message']
 if day_signature in config:
     message = config[day_signature]
-elif users <= 256 and last_power_of_two > status['hit']:
-    message = config['developer'] if users == last_power_of_two else config['developer_plus']
-    users = last_power_of_two
+elif users <= 256 and last_power_of_two > status['users']:
     status['hit'] = last_power_of_two
+    message = config['developer'] if users == last_power_of_two else config['developer_plus']
+    reportedusers = last_power_of_two
 else:
     for goal in milestones:
-        if goal > status['hit'] and users >= goal:
-            message = config['wow'] if users == goal else config['wow_plus']
-            users = goal
+        if goal > status['users'] and users >= goal:
             status['hit'] = goal
+            message = config['wow'] if users == goal else config['wow_plus']
+            reportedusers = goal
             break
+
+status['users'] = users
 
 toot = message.format(instance = instance, users = users, statuses = statuses)
 toot = toot + eye
