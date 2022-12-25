@@ -104,3 +104,5 @@ else:
 if not dryrun:
     with open(status_file, 'w') as f:
         yaml.dump(status, f)
+else:
+    print("Would store hit: {} users: {}".format(status['hit'], status['users']))
