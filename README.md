@@ -20,6 +20,14 @@ token: YOUR_USER_API_TOKEN_GOES_HERE
 instance_uri: https://your.uri.goes.here/
 message: 'There are {users} souls at {instance}'
 ```
+
+TO EXPAND
+wow
+wow_plus
+developer
+developer_plus
+milestones
+
 ## Running
 The simplest way is:
 ```

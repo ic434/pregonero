@@ -21,8 +21,6 @@ import os
 
 eye = ' 👁️'
 
-milestones = (50, 60, 81, 100, 121, 144, 169)
-
 localpath = os.path.dirname(sys.argv[0])
 default_config_file = os.path.join(localpath, 'pregonero.yaml')
 status_file = os.path.join(localpath, '.pregonero.yaml')
@@ -30,6 +28,7 @@ status_file = os.path.join(localpath, '.pregonero.yaml')
 parser = argparse.ArgumentParser(description="Toot user count usign given (bot) account.", fromfile_prefix_chars='@')
 parser.add_argument('--config', help='YAML config file to use (accepted variables: token, instance_uri, message)', default=None)
 parser.add_argument('--date', help='yyyy-mm-dd date for testing different run dates', default=None)
+parser.add_argument('--users', help='Number of users, for testing', type=int, default=None)
 groupd = parser.add_mutually_exclusive_group()
 groupd.add_argument("--dry-run", help="Do not post, just test", action="store_true", default=True)
 groupd.add_argument("--do", help="Post", action="store_true", default=False)
@@ -45,8 +44,10 @@ config = {
     'wow': "Let's celebrate that we have reached {users} souls at {instance}",
     'wow_plus': "Let's celebrate that we have exceeded {users} souls at {instance}",
     'developer': "Us, developers, celebrate reaching {users} souls at {instance}",
-    'developer_plus': "Us, developers, celebrate exceeding {users} souls at {instance}"
+    'developer_plus': "Us, developers, celebrate exceeding {users} souls at {instance}",
+    'milestones': [50, 60, 81, 100, 121, 144, 169]
 }
+
 try:
     with open(args.config if args.config is not None else default_config_file) as f:
         config.update(yaml.safe_load(f))
@@ -81,7 +82,7 @@ mastodon = Mastodon(
 
 # Get data from the server
 instance_data = mastodon.instance()
-users = instance_data["stats"]["user_count"]
+users = instance_data["stats"]["user_count"] if args.users is None else args.users
 instance = instance_data["uri"]
 statuses = instance_data["stats"]["status_count"]
 reportedusers = users
@@ -95,13 +96,12 @@ elif users <= 256 and last_power_of_two > status['users']:
     status['hit'] = last_power_of_two
     message = config['developer'] if users == last_power_of_two else config['developer_plus']
     reportedusers = last_power_of_two
-else:
-    for goal in milestones:
-        if goal > status['users'] and users >= goal:
+elif 'milestones' in config:
+    for goal in config['milestones']:
+        if users >= goal and goal > status['hit'] and goal > status['users']:
             status['hit'] = goal
             message = config['wow'] if users == goal else config['wow_plus']
             reportedusers = goal
-            break
 
 status['users'] = users
 
