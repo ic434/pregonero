@@ -42,3 +42,14 @@ In order for the script to effectively post, the `--do` command line parameter m
 $ ./pregonero.py --do
 $
 ```
+
+An additional parameter can be fed to the script:
+
+```
+$ ./pregonero.py --date 2022-12-29
+$
+```
+
+It sets the _current_ date for the script, to test different running dates.
+
+Running the script also generates a status file, `.pregonero.yaml`, for internal use. The file is generated in the same folder of the script on its first non-dry-run run, and should not be deleted or modified manually. Deleting it would only affect the next run of the script.

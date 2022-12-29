@@ -12,7 +12,12 @@ import os
 # Config file arguments
 # - token
 # - instance_uri
-# - message (can use three placeholders, instance, users, statuses) 
+# - message
+#   the message can use thesee placeholders, instance, users, statuses, date - datetime object ) :
+#   - instance - instance name
+#   - users - number of users
+#   - statuses - number of tooted statuses
+#   - date - a datetimeobject of current date and time, can also use properties: date.year, date.month, date.day, etc
 
 eye = ' 👁️'
 
@@ -24,6 +29,7 @@ status_file = os.path.join(localpath, '.pregonero.yaml')
 
 parser = argparse.ArgumentParser(description="Toot user count usign given (bot) account.", fromfile_prefix_chars='@')
 parser.add_argument('--config', help='YAML config file to use (accepted variables: token, instance_uri, message)', default=None)
+parser.add_argument('--date', help='yyyy-mm-dd date for testing different run dates', default=None)
 groupd = parser.add_mutually_exclusive_group()
 groupd.add_argument("--dry-run", help="Do not post, just test", action="store_true", default=True)
 groupd.add_argument("--do", help="Post", action="store_true", default=False)
@@ -60,6 +66,14 @@ if 'instance_uri' not in config or config['instance_uri'] is None:
 if 'token' not in config or config['token'] is None:
     raise Exception('Token is mandatory')
 
+today = datetime.datetime.now()
+if args.date is not None:
+    try:
+        today = datetime.datetime.strptime(args.date, "%Y-%m-%d")
+    except Exception as e:
+        print("Ignoring {} non-parseable date (yyyy-mm-dd)".format(args.date,))
+        pass
+
 mastodon = Mastodon(
     access_token=config['token'],
     api_base_url=config['instance_uri']
@@ -71,7 +85,6 @@ users = instance_data["stats"]["user_count"]
 instance = instance_data["uri"]
 statuses = instance_data["stats"]["status_count"]
 reportedusers = users
-today = datetime.datetime.now()
 day_signature = 'message_' + str(today.month) + '_' + str(today.day)
 last_power_of_two = int(math.pow(2, int(math.log(users, 2))))
 
@@ -92,7 +105,7 @@ else:
 
 status['users'] = users
 
-toot = message.format(instance = instance, users = users, statuses = statuses)
+toot = message.format(instance = instance, users = users, statuses = statuses, date = today)
 toot = toot + eye
 
 # Finish
