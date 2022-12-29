@@ -95,7 +95,7 @@ if args.hit is not None:
 message = config['message']
 if day_signature in config:
     message = config[day_signature]
-elif users <= 256 and last_power_of_two > status['users']:
+elif users <= 256 and last_power_of_two > status['hit'] and last_power_of_two > status['users']:
     status['hit'] = last_power_of_two
     message = config['developer'] if users == last_power_of_two else config['developer_plus']
     reportedusers = last_power_of_two
