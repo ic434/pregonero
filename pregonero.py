@@ -29,6 +29,7 @@ parser = argparse.ArgumentParser(description="Toot user count usign given (bot) 
 parser.add_argument('--config', help='YAML config file to use (accepted variables: token, instance_uri, message)', default=None)
 parser.add_argument('--date', help='yyyy-mm-dd date for testing different run dates', default=None)
 parser.add_argument('--users', help='Number of users, for testing', type=int, default=None)
+parser.add_argument('--hit', help='Goal hit, for testing', type=int, default=None)
 groupd = parser.add_mutually_exclusive_group()
 groupd.add_argument("--dry-run", help="Do not post, just test", action="store_true", default=True)
 groupd.add_argument("--do", help="Post", action="store_true", default=False)
@@ -88,6 +89,8 @@ statuses = instance_data["stats"]["status_count"]
 reportedusers = users
 day_signature = 'message_' + str(today.month) + '_' + str(today.day)
 last_power_of_two = int(math.pow(2, int(math.log(users, 2))))
+if args.hit is not None:
+    status['hit'] = args.hit
 
 message = config['message']
 if day_signature in config:
