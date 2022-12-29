@@ -105,7 +105,7 @@ elif 'milestones' in config:
 
 status['users'] = users
 
-toot = message.format(instance = instance, users = users, statuses = statuses, date = today)
+toot = message.format(instance = instance, users = reportedusers, statuses = statuses, date = today)
 toot = toot + eye
 
 # Finish
