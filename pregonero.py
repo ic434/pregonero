@@ -32,6 +32,7 @@ parser.add_argument('--users', help='Number of users, for testing', type=int, de
 parser.add_argument('--lastusers', help='Number of stored users, for testing', type=int, default=None)
 parser.add_argument('--hit', help='Goal hit, for testing', type=int, default=None)
 parser.add_argument('--statuses', help='Statuses, for testing', type=int, default=None)
+parser.add_argument('--laststatuses', help='Number of stored statuses, for testing', type=int, default=None)
 groupd = parser.add_mutually_exclusive_group()
 groupd.add_argument("--dry-run", help="Do not post, just test", action="store_true", default=True)
 groupd.add_argument("--do", help="Post", action="store_true", default=False)
@@ -89,7 +90,7 @@ mastodon = Mastodon(
 instance_data = mastodon.instance()
 users = instance_data["stats"]["user_count"] if args.users is None else args.users
 instance = instance_data["uri"]
-statuses = instance_data["stats"]["status_count"]
+statuses = instance_data["stats"]["status_count"] if args.statuses is None else args.statuses
 reportedusers = users
 reportedstatuses = statuses
 day_signature = 'message_' + str(today.month) + '_' + str(today.day)
@@ -101,8 +102,8 @@ if args.hit is not None:
     status['hit'] = args.hit
 if args.lastusers is not None:
     status['users'] = args.lastusers
-if args.statuses is not None:
-    status['statuses'] = args.statuses
+if args.laststatuses is not None:
+    status['statuses'] = args.laststatuses
 
 message = config['message']
 motd = False
