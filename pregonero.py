@@ -116,7 +116,7 @@ elif users <= 512 and last_power_of_two > status['hit'] and last_power_of_two > 
     message = config['developer'] if users == last_power_of_two else config['developer_plus']
     reportedusers = last_power_of_two
     post = True
-elif last_half_thousand >= status['statuses']:
+elif not post and last_half_thousand >= status['statuses']:
     message = config['statuses'] if statuses == last_half_thousand else config['statuses_plus']
     reportedstatuses = last_half_thousand
     post = True
