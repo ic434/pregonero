@@ -106,7 +106,7 @@ if args.statuses is not None:
 
 message = config['message']
 motd = False
-post = (status['users'] > users)
+post = (users > status['users'])
 if day_signature in config:
     message = config[day_signature]
     motd = True
