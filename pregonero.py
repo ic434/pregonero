@@ -31,6 +31,7 @@ parser.add_argument('--date', help='yyyy-mm-dd date for testing different run da
 parser.add_argument('--users', help='Number of users, for testing', type=int, default=None)
 parser.add_argument('--lastusers', help='Number of stored users, for testing', type=int, default=None)
 parser.add_argument('--hit', help='Goal hit, for testing', type=int, default=None)
+parser.add_argument('--statuses', help='Statuses, for testing', type=int, default=None)
 groupd = parser.add_mutually_exclusive_group()
 groupd.add_argument("--dry-run", help="Do not post, just test", action="store_true", default=True)
 groupd.add_argument("--do", help="Post", action="store_true", default=False)
@@ -43,6 +44,8 @@ if args.do:
 # Configure
 config = {
     'message': 'There are {users} souls at {instance}',
+    'statuses': 'Hey, look! We have reached {statuses} statuses at {instance}',
+    'statuses_plus': 'Hey, look! We have exceeded {statuses} statuses at {instance}',
     'wow': "Let's celebrate that we have reached {users} souls at {instance}",
     'wow_plus': "Let's celebrate that we have exceeded {users} souls at {instance}",
     'developer': "Us, developers, celebrate reaching {users} souls at {instance}",
@@ -56,7 +59,7 @@ try:
 except Exception as e:
     print("Config file error: {}".format(e))
 
-status = {'users': 0, 'hit': 0}
+status = {'users': 0, 'hit': 0, 'statuses': 0}
 try:
     with open(status_file) as f:
         status.update(yaml.safe_load(f))
@@ -88,14 +91,18 @@ users = instance_data["stats"]["user_count"] if args.users is None else args.use
 instance = instance_data["uri"]
 statuses = instance_data["stats"]["status_count"]
 reportedusers = users
+reportedstatuses = statuses
 day_signature = 'message_' + str(today.month) + '_' + str(today.day)
 last_power_of_two = int(math.pow(2, int(math.log(users, 2))))
+last_half_thousand = int(statuses / 500.0) * 500
 
 # Debugging
 if args.hit is not None:
     status['hit'] = args.hit
 if args.lastusers is not None:
     status['users'] = args.lastusers
+if args.statuses is not None:
+    status['statuses'] = args.statuses
 
 message = config['message']
 post = (status['users'] > users)
@@ -112,10 +119,15 @@ elif 'milestones' in config:
             status['hit'] = goal
             message = config['wow'] if users == goal else config['wow_plus']
             reportedusers = goal
+elif last_half_thousand >= status['statuses']:
+    message = config['statuses'] if statuses == last_half_thousand else config['statuses_plus']
+    reportedstatuses = last_half_thousand
+    post = True
 
 status['users'] = users
+status['statuses'] = statuses
 
-toot = message.format(instance = instance, users = reportedusers, statuses = statuses, date = today)
+toot = message.format(instance = instance, users = reportedusers, statuses = reportedstatuses, date = today)
 toot = toot + eye
 
 # Finish
@@ -131,4 +143,4 @@ if not dryrun:
     with open(status_file, 'w') as f:
         yaml.dump(status, f)
 else:
-    print("Would store hit: {} users: {}".format(status['hit'], status['users']))
+    print("Would store: {}".format(status,))
