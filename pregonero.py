@@ -74,9 +74,12 @@ if 'token' not in config or config['token'] is None:
     raise Exception('Token is mandatory')
 
 today = datetime.datetime.now()
+day_signature = 'message_' + str(today.month) + '_' + str(today.day)
 if args.date is not None:
     try:
         today = datetime.datetime.strptime(args.date, "%Y-%m-%d")
+        day_signature = 'message_' + str(today.month) + '_' + str(today.day)
+        print("Using {} as today with signature {}".format(today, day_signature))
     except Exception as e:
         print("Ignoring {} non-parseable date (yyyy-mm-dd)".format(args.date,))
         pass
@@ -93,7 +96,6 @@ instance = instance_data["uri"]
 statuses = instance_data["stats"]["status_count"] if args.statuses is None else args.statuses
 reportedusers = users
 reportedstatuses = statuses
-day_signature = 'message_' + str(today.month) + '_' + str(today.day)
 last_power_of_two = int(math.pow(2, int(math.log(users, 2))))
 last_half_thousand = int(statuses / 500.0) * 500
 
