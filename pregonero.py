@@ -90,15 +90,19 @@ statuses = instance_data["stats"]["status_count"]
 reportedusers = users
 day_signature = 'message_' + str(today.month) + '_' + str(today.day)
 last_power_of_two = int(math.pow(2, int(math.log(users, 2))))
+
+# Debugging
 if args.hit is not None:
     status['hit'] = args.hit
 if args.lastusers is not None:
     status['users'] = args.lastusers
 
 message = config['message']
+post = (status['users'] > users)
 if day_signature in config:
     message = config[day_signature]
-elif users <= 256 and last_power_of_two > status['hit'] and last_power_of_two > status['users']:
+    post = True
+elif users <= 512 and last_power_of_two > status['hit'] and last_power_of_two > status['users']:
     status['hit'] = last_power_of_two
     message = config['developer'] if users == last_power_of_two else config['developer_plus']
     reportedusers = last_power_of_two
@@ -115,10 +119,13 @@ toot = message.format(instance = instance, users = reportedusers, statuses = sta
 toot = toot + eye
 
 # Finish
-if dryrun:
-    print('Would have posted: "{}"'.format(toot))
+if post:
+    if dryrun:
+        print('Would have posted: "{}"'.format(toot))
+    else:
+        mastodon.status_post(toot)
 else:
-    mastodon.status_post(toot)
+    print('Same user count ({}) and no forced tooting'.format(status['users']))
 
 if not dryrun:
     with open(status_file, 'w') as f:
