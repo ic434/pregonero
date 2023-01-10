@@ -105,24 +105,28 @@ if args.statuses is not None:
     status['statuses'] = args.statuses
 
 message = config['message']
+motd = False
 post = (status['users'] > users)
 if day_signature in config:
     message = config[day_signature]
-    post = True
+    motd = True
 elif users <= 512 and last_power_of_two > status['hit'] and last_power_of_two > status['users']:
     status['hit'] = last_power_of_two
     message = config['developer'] if users == last_power_of_two else config['developer_plus']
     reportedusers = last_power_of_two
-elif 'milestones' in config:
+    post = True
+elif last_half_thousand >= status['statuses']:
+    message = config['statuses'] if statuses == last_half_thousand else config['statuses_plus']
+    reportedstatuses = last_half_thousand
+    post = True
+
+if not motd and 'milestones' in config:
     for goal in config['milestones']:
         if users >= goal and goal > status['hit'] and goal > status['users']:
             status['hit'] = goal
             message = config['wow'] if users == goal else config['wow_plus']
             reportedusers = goal
-elif last_half_thousand >= status['statuses']:
-    message = config['statuses'] if statuses == last_half_thousand else config['statuses_plus']
-    reportedstatuses = last_half_thousand
-    post = True
+            post = True
 
 status['users'] = users
 status['statuses'] = statuses
@@ -131,7 +135,7 @@ toot = message.format(instance = instance, users = reportedusers, statuses = rep
 toot = toot + eye
 
 # Finish
-if post:
+if post or motd:
     if dryrun:
         print('Would have posted: "{}"'.format(toot))
     else:
