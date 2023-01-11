@@ -61,6 +61,8 @@ except Exception as e:
     print("Config file error: {}".format(e))
 
 status = {'users': 0, 'hit': 0, 'statuses': 0}
+modulus = 100 if 'modulus' not in config else config['modulus']
+
 try:
     with open(status_file) as f:
         status.update(yaml.safe_load(f))
@@ -97,7 +99,7 @@ statuses = instance_data["stats"]["status_count"] if args.statuses is None else 
 reportedusers = users
 reportedstatuses = statuses
 last_power_of_two = int(math.pow(2, int(math.log(users, 2))))
-last_half_thousand = int(statuses / 500.0) * 500
+last_status_moduled = int(statuses / modulus) * modulus
 
 # Debugging
 if args.hit is not None:
@@ -118,9 +120,9 @@ elif users <= 512 and last_power_of_two > status['hit'] and last_power_of_two > 
     message = config['developer'] if users == last_power_of_two else config['developer_plus']
     reportedusers = last_power_of_two
     post = True
-elif not post and last_half_thousand >= status['statuses']:
-    message = config['statuses'] if statuses == last_half_thousand else config['statuses_plus']
-    reportedstatuses = last_half_thousand
+elif not post and last_status_moduled >= status['statuses']:
+    message = config['statuses'] if statuses == last_status_moduled else config['statuses_plus']
+    reportedstatuses = last_status_moduled
     post = True
 
 if not motd and 'milestones' in config:

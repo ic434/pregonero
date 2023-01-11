@@ -22,8 +22,11 @@ message: 'There are {users} souls at {instance}'
 ```
 
 TO EXPAND
+modulus
 wow
 wow_plus
+statuses
+statuses_plus
 developer
 developer_plus
 milestones
