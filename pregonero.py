@@ -10,6 +10,7 @@ import sys
 import os
 
 # Config file arguments
+# TODO: update config file arguments
 # - token
 # - instance_uri
 # - message
@@ -19,18 +20,27 @@ import os
 #   - statuses - number of tooted statuses
 #   - date - a datetimeobject of current date and time, can also use properties: date.year, date.month, date.day, etc
 
+def format_message(msg, instance, users, statuses, date):
+    if isinstance(msg, str):
+        try:
+            return msg.format(instance=instance, users=users, statuses=statuses, date=date)
+        except Exception as e:
+            print('Error formatting message {}: {}'.format(msg, e))
+    return None
+
 eye = ' 👁️'
 
 localpath = os.path.dirname(sys.argv[0])
+# TODO: think of removing config & status file from binary folder and move them to somewhere else
 default_config_file = os.path.join(localpath, 'pregonero.yaml')
 status_file = os.path.join(localpath, '.pregonero.yaml')
 
 parser = argparse.ArgumentParser(description="Toot user count usign given (bot) account.", fromfile_prefix_chars='@')
+# TODO: Update README.md to reflect all the options
 parser.add_argument('--config', help='YAML config file to use (accepted variables: token, instance_uri, message)', default=None)
 parser.add_argument('--date', help='yyyy-mm-dd date for testing different run dates', default=None)
 parser.add_argument('--users', help='Number of users, for testing', type=int, default=None)
 parser.add_argument('--lastusers', help='Number of stored users, for testing', type=int, default=None)
-parser.add_argument('--hit', help='Goal hit, for testing', type=int, default=None)
 parser.add_argument('--statuses', help='Statuses, for testing', type=int, default=None)
 parser.add_argument('--laststatuses', help='Number of stored statuses, for testing', type=int, default=None)
 groupd = parser.add_mutually_exclusive_group()
@@ -60,7 +70,7 @@ try:
 except Exception as e:
     print("Config file error: {}".format(e))
 
-status = {'users': 0, 'hit': 0, 'statuses': 0}
+status = {'users': 0, 'statuses': 0}
 modulus = 100 if 'modulus' not in config else config['modulus']
 
 try:
@@ -76,15 +86,15 @@ if 'token' not in config or config['token'] is None:
     raise Exception('Token is mandatory')
 
 today = datetime.datetime.now()
-day_signature = 'message_' + str(today.month) + '_' + str(today.day)
+day_signature = ('message_' + str(today.month) + '_' + str(today.day), 'message_' + str(today.day))
+
 if args.date is not None:
     try:
         today = datetime.datetime.strptime(args.date, "%Y-%m-%d")
-        day_signature = 'message_' + str(today.month) + '_' + str(today.day)
+        day_signature = ('message_' + str(today.month) + '_' + str(today.day), 'message_' + str(today.day))
         print("Using {} as today with signature {}".format(today, day_signature))
     except Exception as e:
-        print("Ignoring {} non-parseable date (yyyy-mm-dd)".format(args.date,))
-        pass
+        print("Ignoring {} non-parseable date (yyyy-mm-dd): {}".format(args.date, e))
 
 mastodon = Mastodon(
     access_token=config['token'],
@@ -102,52 +112,66 @@ last_power_of_two = int(math.pow(2, int(math.log(users, 2))))
 last_status_moduled = int(statuses / modulus) * modulus
 
 # Debugging
-if args.hit is not None:
-    status['hit'] = args.hit
 if args.lastusers is not None:
     status['users'] = args.lastusers
 if args.laststatuses is not None:
     status['statuses'] = args.laststatuses
 
-message = config['message']
-motd = False
-post = (users > status['users'])
-if day_signature in config:
-    message = config[day_signature]
-    motd = True
-elif users <= 512 and last_power_of_two > status['hit'] and last_power_of_two > status['users']:
-    status['hit'] = last_power_of_two
-    message = config['developer'] if users == last_power_of_two else config['developer_plus']
-    reportedusers = last_power_of_two
-    post = True
-elif not post and last_status_moduled >= status['statuses']:
-    message = config['statuses'] if statuses == last_status_moduled else config['statuses_plus']
-    reportedstatuses = last_status_moduled
-    post = True
+messages = []
 
-if not motd and 'milestones' in config:
-    for goal in config['milestones']:
-        if users >= goal and goal > status['hit'] and goal > status['users']:
-            status['hit'] = goal
-            message = config['wow'] if users == goal else config['wow_plus']
-            reportedusers = goal
-            post = True
+users_reported = False
 
+# Check motds
+date_hits = set(day_signature).intersection(config.keys())
+if len(date_hits) > 0:
+    for key in date_hits:
+        messages.append(format_message(config[key], instance, users, statuses, today))
+
+# Check programmer milestones
+if users <= 65536 and last_power_of_two > status['users']:
+    users_reported = users == last_power_of_two 
+    messages.append(format_message(config['developer'] if users == last_power_of_two else config['developer_plus'], instance, last_power_of_two, statuses, today))
+
+# By design, the generic milestones are only checked if they are higher than programmer milestones
+if 'milestones' in config:
+    for goal in reversed(sorted(config['milestones'])):
+        if users >= goal and goal > last_power_of_two and goal > status['users']:
+            users_reported = users_reported or users == goal
+            messages.append(format_message(config['wow'] if users == goal else config['wow_plus'], instance, goal, statuses, today))
+            break
+
+# Has user number changed?
+if not users_reported and users > status['users']:
+    messages.append(format_message(config['users'], instance, users, statuses, today))
+else:
+    print('Same user count ({})'.format(status['users']))
+
+# Check statuses milestones
+if last_status_moduled >= status['statuses']:
+    messages.append(format_message(config['statuses'] if statuses == last_status_moduled else config['statuses_plus'], instance, users, last_status_moduled, today))
+
+# Store new status
 status['users'] = users
 status['statuses'] = statuses
 
-toot = message.format(instance = instance, users = reportedusers, statuses = reportedstatuses, date = today)
-toot = toot + eye
+messages = list(filter(lambda x: x is not None, messages))
 
 # Finish
-if post or motd:
-    if dryrun:
-        print('Would have posted: "{}"'.format(toot))
-    else:
-        mastodon.status_post(toot)
+if len(messages) > 0:
+    try:
+        messages = [format_message(config['message'], instance, users, statuses, today)] + messages
+        toot = '. '.join(messages)
+        toot = toot + '.' + eye
+        if dryrun:
+            print('Would have posted: "{}"'.format(toot))
+        else:
+            mastodon.status_post(toot)
+    except Exception as e:
+        print('An exception occurred: {}'.format(e))
 else:
-    print('Same user count ({}) and no forced tooting'.format(status['users']))
+    print('Nothing to say')
 
+# Persist status
 if not dryrun:
     with open(status_file, 'w') as f:
         yaml.dump(status, f)
